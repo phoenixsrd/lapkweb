@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="page-head">
+  <h1>Checador de Versão</h1>
+  <p class="subtitle">
+    {{ resumo.total }} jogo{{ 's' if resumo.total != 1 else '' }} monitorado{{ 's' if resumo.total != 1 else '' }}
+    {% if resumo.pendentes %}
+      · <span class="pill pill-stale">{{ resumo.pendentes }} com atualização</span>
+    {% endif %}
+  </p>
+</header>
+
+<form method="post" action="{{ url_for('jogos.verificar_todos') }}">
+  <button type="submit" class="btn btn-primary btn-block">Verificar todos</button>
+</form>
+
+<section class="lista">
+  {% if not jogos %}
+    <div class="vazio">
+      <p>Nenhum jogo cadastrado ainda.</p>
+      <p class="text-muted">Adicione um jogo abaixo para começar a monitorar atualizações.</p>
+    </div>
+  {% endif %}
+
+  {% for j in jogos %}
+  {% set status = 'erro' if j.erro else ('stale' if tem_atualizacao(j) else ('ok' if j.versao_site else 'pendente')) %}
+  <article class="card status-{{ status }}">
+    <div class="card-top">
+      <h2 class="card-title">{{ j.nome }}</h2>
+      <span class="dot dot-{{ status }}" aria-hidden="true"></span>
+    </div>
+
+    {% if j.erro %}
+      <p class="msg-erro">{{ j.erro }}</p>
+    {% elif j.versao_site %}
+      <p class="diff">
+        <span class="v-local">{{ j.versao_local }}</span>
+        {% if tem_atualizacao(j) %}
+          <span class="arrow">→</span>
+          <span class="v-site">{{ j.versao_site }}</span>
+        {% endif %}
+      </p>
+    {% else %}
+      <p class="diff"><span class="v-local">{{ j.versao_local }}</span></p>
+    {% endif %}
+
+    <p class="meta">
+      {% if j.ultima_verificacao %}verificado {{ j.ultima_verificacao }}{% else %}ainda não verificado{% endif %}
+      {% if j.atualizado_em %} · publicado em {{ j.atualizado_em }}{% endif %}
+    </p>
+
+    <div class="acoes">
+      <form method="post" action="{{ url_for('jogos.verificar', jogo_id=j.id) }}">
+        <button type="submit" class="btn btn-ghost">Verificar</button>
+      </form>
+      {% if tem_atualizacao(j) %}
+      <form method="post" action="{{ url_for('jogos.marcar_atualizado', jogo_id=j.id) }}">
+        <button type="submit" class="btn btn-ok">Marcar atualizado</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('jogos.editar', jogo_id=j.id) }}" class="btn btn-ghost">Editar</a>
+      <form method="post" action="{{ url_for('jogos.excluir', jogo_id=j.id) }}"
+            onsubmit="return confirm('Excluir {{ j.nome }}? Essa ação não pode ser desfeita.');">
+        <button type="submit" class="btn btn-danger">Excluir</button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+
+<details class="add-jogo">
+  <summary>+ Adicionar jogo</summary>
+  <form method="post" action="{{ url_for('jogos.adicionar') }}" class="form">
+    <label>Nome
+      <input name="nome" placeholder="Ex: Milfania" required>
+    </label>
+    <label>URL da página
+      <input name="url" type="url" placeholder="https://lapkjogos.com/..." required>
+    </label>
+    <label>Versão que você tem
+      <input name="versao_local" placeholder="Ex: 0.6.5b" required>
+    </label>
+    <button type="submit" class="btn btn-primary">Adicionar</button>
+  </form>
+</details>
+{% endblock %}
