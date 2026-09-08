@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "id": 1,
+    "nome": "All Things Change",
+    "url": "https://lapkjogos.com/all-things-change/",
+    "versao_local": "0.2.9b + DLC Data da Atualização: 08/08/2026",
+    "versao_site": "0.2.9b + DLC Data da Atualização: 08/08/2026",
+    "atualizado_em": null,
+    "ultima_verificacao": "08/09 16:38",
+    "erro": null
+  },
+  {
+    "id": 2,
+    "nome": "Inanna Revenge",
+    "url": "https://lapkjogos.com/inanna-revenge/",
+    "versao_local": "Episódio 3 -> Episódio 4 Data da Atualização: 08/08/2026",
+    "versao_site": "Episódio 3 -> Episódio 4 Data da Atualização: 08/08/2026",
+    "atualizado_em": null,
+    "ultima_verificacao": "08/09 16:38",
+    "erro": null
+  },
+  {
+    "id": 3,
+    "nome": "The Big Step",
+    "url": "https://lapkjogos.com/the-big-step/",
+    "versao_local": "S1 COMPLETO S2 v0.4 Data da Atualização: 14/08/2026",
+    "versao_site": "S1 COMPLETO S2 v0.4 Data da Atualização: 14/08/2026",
+    "atualizado_em": null,
+    "ultima_verificacao": "08/09 16:39",
+    "erro": null
+  }
+]
