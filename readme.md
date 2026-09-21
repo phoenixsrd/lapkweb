@@ -1,110 +1,69 @@
-# LapkWeb
+# 🎮 LapkWeb
 
-Aplicação web em **Flask** para monitorar atualizações de jogos. Os jogos são cadastrados **manualmente** (nome, URL e versão local), e o sistema faz a **verificação automática** da versão publicada na página de origem, sinalizando quando existe uma atualização disponível.
+O **LapkWeb** é uma aplicação Flask para acompanhar atualizações de jogos. Você cadastra manualmente o nome, a URL da página e a versão instalada; o sistema acessa a página, extrai a versão publicada e indica no painel quando existe uma atualização pendente.
 
-## Sobre o projeto
+## Fluxo de uso
 
-O LapkWeb resolve um problema simples: acompanhar se os jogos que você já baixou/instalou receberam uma nova versão, sem precisar visitar manualmente cada página de tempos em tempos.
+1. Cadastre um jogo com nome, URL e versão local.
+2. Use a verificação individual ou **Verificar todos**.
+3. O scraper baixa o HTML, transforma a página em texto e procura os rótulos configurados para versão e data.
+4. Se a versão do site for diferente da versão local, o jogo aparece como pendente.
+5. Depois de atualizar o jogo, use **Marcar como atualizado** para sincronizar a versão local.
 
-Fluxo de uso:
-1. Você adiciona um jogo informando nome, URL da página e a versão que você já possui localmente.
-2. A aplicação acessa a URL, extrai o texto da página e procura por campos como **"Versão do jogo:"** e **"Atualizado em:"**.
-3. Se a versão encontrada na página for diferente da versão local salva, o jogo é marcado como **pendente de atualização** no painel.
-4. Quando você atualizar o jogo, basta marcar como atualizado para sincronizar a versão local com a versão do site.
+```text
+formulário → storage JSON → scraper requests/BeautifulSoup → comparação → painel Flask
+```
 
 ## Funcionalidades
 
-- Cadastro manual de jogos (nome, URL, versão local)
-- Verificação individual ou em lote ("verificar todos") da versão mais recente
-- Extração automática de versão e data de atualização via scraping (regex + BeautifulSoup)
-- Indicação visual de jogos com atualização pendente
-- Edição e exclusão de jogos cadastrados
-- Marcar jogo como atualizado (sincroniza versão local com a versão do site)
-- Registro da data/hora da última verificação e de eventuais erros de acesso à página
+- Cadastro, edição e exclusão de jogos.
+- Verificação individual ou em lote.
+- Extração por regex com `BeautifulSoup`.
+- Indicação visual de atualizações disponíveis.
+- Registro de versão publicada, data da página, última verificação e erros.
+- Persistência simples em `data/jogos.json`, sem banco de dados.
+- Interface HTML/CSS servida pelos templates Flask.
 
-## Tecnologias utilizadas
+## Estrutura
 
-- [Python 3](https://www.python.org/)
-- [Flask](https://flask.palletsprojects.com/) — framework web e roteamento
-- [Requests](https://docs.python-requests.org/) — requisições HTTP
-- [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/) — parsing HTML
-- Armazenamento simples em arquivo **JSON** (sem banco de dados)
-
-## Estrutura do projeto
-
-```
-lapkweb/
-├── app.py            # Ponto de entrada da aplicação Flask
-├── config.py          # Configurações gerais (host, porta, timeouts, rótulos de busca)
-├── routes.py          # Rotas HTTP (blueprint "jogos")
-├── scraper.py          # Lógica de scraping e extração de versão
-├── storage.py          # Persistência dos jogos em JSON (CRUD)
-├── data/               # Arquivo jogos.json com os dados salvos
-├── static/             # Arquivos estáticos (CSS/JS)
-└── templates/           # Templates HTML (index, edição)
+```text
+app.py        # Cria a aplicação Flask e registra o blueprint
+config.py     # Host, porta, timeout, headers e rótulos do scraper
+routes.py     # Rotas de cadastro, edição, verificação e exclusão
+scraper.py    # Requisição HTTP e extração de versão/data
+storage.py    # Modelo Jogo e operações CRUD no JSON
+data/         # Dados persistidos localmente
+static/       # CSS e arquivos estáticos
+templates/    # Páginas index e edição
 ```
 
-## Como funciona a verificação de versão
+As rotas principais são `/`, `/adicionar`, `/editar/<id>`, `/verificar/<id>`, `/verificar-todos`, `/marcar-atualizado/<id>` e `/excluir/<id>`.
 
-O `scraper.py` faz uma requisição à URL cadastrada, extrai todo o texto da página e usa expressões regulares para localizar o valor logo após o rótulo configurado em `LABEL_VERSAO` (por padrão, **"versão do jogo"**) e `LABEL_ATUALIZADO_EM` (**"atualizado em"**), parando a captura ao encontrar outros rótulos conhecidos da página (tradução, idioma, plataforma, desenvolvedor etc.), definidos em `STOP_LABELS`.
-
-Se o rótulo de versão não for encontrado, ou se a página não puder ser acessada, o erro é registrado no próprio jogo e exibido na interface.
-
-## Modelo de dados
-
-Cada jogo é representado pela dataclass `Jogo`, salva em `data/jogos.json`:
-
-| Campo | Descrição |
-|---|---|
-| `id` | Identificador numérico |
-| `nome` | Nome do jogo |
-| `url` | URL da página monitorada |
-| `versao_local` | Versão que você possui atualmente |
-| `versao_site` | Última versão encontrada na página |
-| `atualizado_em` | Data de atualização informada na página |
-| `ultima_verificacao` | Data/hora da última checagem feita pela aplicação |
-| `erro` | Mensagem de erro, caso a verificação falhe |
-
-## Rotas principais
-
-| Rota | Método | Descrição |
-|---|---|---|
-| `/` | GET | Lista os jogos cadastrados e o resumo de pendências |
-| `/adicionar` | POST | Adiciona um novo jogo |
-| `/editar/<id>` | GET/POST | Exibe/salva a edição de um jogo |
-| `/verificar/<id>` | POST | Verifica a versão de um jogo específico |
-| `/verificar-todos` | POST | Verifica a versão de todos os jogos cadastrados |
-| `/marcar-atualizado/<id>` | POST | Sincroniza a versão local com a versão do site |
-| `/excluir/<id>` | POST | Remove um jogo cadastrado |
-
-## Instalação e uso
-
-Pré-requisitos: Python 3 instalado.
+## Instalação e execução
 
 ```bash
-# Clonar o repositório
 git clone https://github.com/phoenixsrd/lapkweb.git
 cd lapkweb
-
-# Instalar as dependências
+python -m venv .venv
+source .venv/bin/activate          # Linux/macOS
+# .venv\\Scripts\\activate        # Windows
 pip install -r requirements.txt
-
-# Rodar a aplicação
 python app.py
 ```
 
-Por padrão, a aplicação sobe em `http://0.0.0.0:5000`.
+Acesse `http://127.0.0.1:5000` ou o endereço configurado em `config.py`.
 
-## Configuração
+## Configuração do scraper
 
-As principais opções podem ser ajustadas em `config.py`:
+A aplicação procura rótulos como `Versão do jogo:` e `Atualizado em:`. Ajuste em `config.py`:
 
-- `HOST` / `PORT` / `DEBUG` — parâmetros do servidor Flask
-- `DATA_FILE` — caminho do arquivo JSON de persistência
-- `REQUEST_HEADERS` / `REQUEST_TIMEOUT` — configuração das requisições de scraping
-- `LABEL_VERSAO` / `LABEL_ATUALIZADO_EM` / `STOP_LABELS` — rótulos usados para localizar as informações na página
+- `HOST`, `PORT` e `DEBUG`.
+- `DATA_FILE` para o arquivo de persistência.
+- `REQUEST_HEADERS` e `REQUEST_TIMEOUT`.
+- `LABEL_VERSAO`, `LABEL_ATUALIZADO_EM` e `STOP_LABELS`.
 
-## Observações
+O site monitorado precisa deixar essas informações disponíveis no HTML retornado pela requisição. Se a página depender de JavaScript para montar o conteúdo, o `requests` não executará esse JavaScript e será necessário adaptar a estratégia.
 
-- Não há autenticação: a aplicação foi pensada para uso pessoal/local.
-- O scraping depende do formato de texto da página de origem; mudanças no layout do site monitorado podem exigir ajuste dos rótulos em `config.py`.
+## Limitações e segurança
+
+O projeto foi pensado para uso pessoal/local e não possui autenticação. Proteja o acesso se for publicado na internet. O scraping depende do formato textual das páginas monitoradas: mudanças de layout ou de rótulos podem exigir alterações em `config.py` ou `scraper.py`.
