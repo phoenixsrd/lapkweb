@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% set rotulos = {'erro': 'Erro', 'stale': 'Atualização', 'ok': 'Em dia', 'pendente': 'Não verificado'} %}
+
+<header class="page-head">
+  <h1>Checador de Versão</h1>
+  <p class="subtitle">
+    <span>{{ resumo.total }} jogo{{ 's' if resumo.total != 1 else '' }} monitorado{{ 's' if resumo.total != 1 else '' }}</span>
+    {% if resumo.pendentes %}<span class="pill pill-stale">{{ resumo.pendentes }} com atualização</span>{% endif %}
+    {% if resumo.erros %}<span class="pill pill-erro">{{ resumo.erros }} com erro</span>{% endif %}
+  </p>
+</header>
+
+{% if jogos %}
+<form method="post" action="{{ url_for('jogos.verificar_todos') }}">
+  {{ csrf_input() }}
+  <button type="submit" class="btn btn-primary btn-block" data-busy="Verificando…">Verificar todos</button>
+</form>
+
+<div class="toolbar" id="toolbar" hidden>
+  <input type="search" id="busca" placeholder="Buscar jogo…" aria-label="Buscar jogo" autocomplete="off">
+  {% if resumo.pendentes or resumo.erros %}
+  <div class="chips" role="group" aria-label="Filtrar jogos">
+    <button type="button" class="chip" data-filtro="todos" aria-pressed="true">Todos <span>{{ resumo.total }}</span></button>
+    {% if resumo.pendentes %}<button type="button" class="chip" data-filtro="update" aria-pressed="false">Atualizações <span>{{ resumo.pendentes }}</span></button>{% endif %}
+    {% if resumo.erros %}<button type="button" class="chip" data-filtro="erro" aria-pressed="false">Erros <span>{{ resumo.erros }}</span></button>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<section class="lista" id="lista">
+  {% if not jogos %}
+    <div class="vazio">
+      <p>Nenhum jogo cadastrado ainda.</p>
+      <p class="text-muted">Adicione um jogo abaixo para começar a monitorar atualizações.</p>
+    </div>
+  {% endif %}
+
+  {% for j in jogos %}
+  <article id="jogo-{{ j.id }}" class="card status-{{ j.status }}"
+           data-nome="{{ j.nome|lower }}"
+           data-update="{{ 1 if j.tem_atualizacao else 0 }}"
+           data-erro="{{ 1 if j.erro else 0 }}">
+    <div class="card-top">
+      <h2 class="card-title">
+        {% if j.url_segura %}
+          <a href="{{ j.url }}" target="_blank" rel="noopener noreferrer">{{ j.nome }}<span class="ext" aria-hidden="true"> ↗</span></a>
+        {% else %}
+          {{ j.nome }}
+        {% endif %}
+      </h2>
+      <span class="badge badge-{{ j.status }}">{{ rotulos[j.status] }}</span>
+    </div>
+
+    {% if j.erro %}
+      <p class="msg-erro">{{ j.erro }}</p>
+    {% endif %}
+
+    <dl class="versoes">
+      <div>
+        <dt>você tem</dt>
+        <dd class="v-local">{{ j.versao_local }}</dd>
+      </div>
+      {% if j.tem_atualizacao %}
+      <div>
+        <dt>no site</dt>
+        <dd class="v-site">{{ j.versao_site }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+
+    <p class="meta">
+      {% if j.ultima_verificacao %}
+        <span title="{{ j.ultima_verificacao|data_hora }}">verificado {{ j.ultima_verificacao|tempo_relativo }}</span>
+      {% else %}
+        ainda não verificado
+      {% endif %}
+      {% if j.atualizado_em %} · publicado em {{ j.atualizado_em }}{% endif %}
+      {% if j.tem_atualizacao and j.detectado_em %}
+        · novidade detectada <span title="{{ j.detectado_em|data_hora }}">{{ j.detectado_em|tempo_relativo }}</span>
+      {% endif %}
+    </p>
+
+    <div class="acoes">
+      {% if j.tem_atualizacao and j.url_segura %}
+        <a href="{{ j.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Abrir página ↗</a>
+      {% endif %}
+      <form method="post" action="{{ url_for('jogos.verificar', jogo_id=j.id) }}">
+        {{ csrf_input() }}
+        <button type="submit" class="btn btn-ghost" data-busy="Verificando…">Verificar</button>
+      </form>
+      {% if j.tem_atualizacao %}
+      <form method="post" action="{{ url_for('jogos.marcar_atualizado', jogo_id=j.id) }}">
+        {{ csrf_input() }}
+        <button type="submit" class="btn btn-ok">Marcar atualizado</button>
+      </form>
+      {% endif %}
+      <a href="{{ url_for('jogos.editar', jogo_id=j.id) }}" class="btn btn-ghost">Editar</a>
+      <form method="post" action="{{ url_for('jogos.excluir', jogo_id=j.id) }}"
+            data-confirm="Excluir {{ j.nome }}? Essa ação não pode ser desfeita.">
+        {{ csrf_input() }}
+        <button type="submit" class="btn btn-danger">Excluir</button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+
+  <p class="vazio vazio-filtro" id="sem-resultados" hidden>Nenhum jogo encontrado com esse filtro.</p>
+</section>
+
+<details class="add-jogo" {{ 'open' if erros }}>
+  <summary>+ Adicionar jogo</summary>
+  {% if erros %}
+  <ul class="form-erros" role="alert">
+    {% for e in erros %}<li>{{ e }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  <form method="post" action="{{ url_for('jogos.adicionar') }}" class="form">
+    {{ csrf_input() }}
+    <label>Nome
+      <input name="nome" value="{{ valores.get('nome', '') }}" placeholder="Ex: Milfania" maxlength="100" required>
+    </label>
+    <label>URL da página
+      <input name="url" type="url" inputmode="url" autocapitalize="off" value="{{ valores.get('url', '') }}" placeholder="https://lapkjogos.com/..." maxlength="500" required>
+    </label>
+    <label>Versão que você tem
+      <input name="versao_local" value="{{ valores.get('versao_local', '') }}" placeholder="Ex: 0.6.5b" maxlength="120" required>
+    </label>
+    <button type="submit" class="btn btn-primary" data-busy="Verificando…">Adicionar</button>
+  </form>
+</details>
+{% endblock %}

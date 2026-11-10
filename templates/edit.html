@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Editar {{ jogo.nome }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <a href="{{ url_for('jogos.index', _anchor='jogo-' ~ jogo.id) }}" class="voltar">← voltar</a>
+  <h1>Editar jogo</h1>
+</header>
+
+{% if erros %}
+<ul class="form-erros" role="alert">
+  {% for e in erros %}<li>{{ e }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<form method="post" action="{{ url_for('jogos.editar', jogo_id=jogo.id) }}" class="form">
+  {{ csrf_input() }}
+  <label>Nome
+    <input name="nome" value="{{ valores.get('nome', '') }}" maxlength="100" required>
+  </label>
+  <label>URL da página
+    <input name="url" type="url" inputmode="url" autocapitalize="off" value="{{ valores.get('url', '') }}" maxlength="500" required>
+  </label>
+  <label>Versão que você tem
+    <input name="versao_local" value="{{ valores.get('versao_local', '') }}" maxlength="120" required>
+  </label>
+  <button type="submit" class="btn btn-primary btn-block">Salvar</button>
+</form>
+{% endblock %}
