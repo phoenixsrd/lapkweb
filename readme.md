@@ -150,16 +150,6 @@ A primeira verificação automática acontece alguns segundos depois de o servid
 
 Opções de scraping ficam em `config.py`: `REQUEST_HEADERS`, `REQUEST_TIMEOUT`, `REQUEST_RETRIES`, `MAX_WORKERS`, `MAX_BYTES`, `LABELS_VERSAO`, `LABELS_DATA` e `STOP_LABELS`.
 
-## Testes
-
-Os testes usam apenas a biblioteca padrão (`unittest`) e uma pasta temporária, então **nunca mexem nos seus dados**:
-
-```bash
-python -m unittest discover -s tests -t .
-```
-
-Cobrem a extração de versão/data, o scraper (incluindo um servidor HTTP local para testar erros e novas tentativas), o armazenamento e a migração, a regra de verificação e as rotas (CSRF, validação, duplicidade etc.).
-
 ## Observações
 
 - Não há login: a aplicação foi pensada para uso pessoal/local. Os formulários têm proteção CSRF, mas, se for expor a aplicação além da sua rede, coloque-a atrás de um proxy com autenticação.
