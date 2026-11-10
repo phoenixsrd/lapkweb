@@ -54,7 +54,6 @@ lapkweb/
 ├── data/             # jogos.json (seus dados) e .secret_key (gerada sozinha)
 ├── static/           # style.css, app.js, favicon.svg
 ├── templates/        # base, index, edit, erro
-└── tests/            # testes automatizados (unittest)
 ```
 
 ## Como funciona a verificação de versão
